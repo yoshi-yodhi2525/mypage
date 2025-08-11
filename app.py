@@ -254,10 +254,27 @@ def show_mypage():
                 st.write(f"Error getting base_url: {e}")
                 base_url = "https://mypage-001.streamlit.app"
             
+            # QRコード生成のデバッグ情報
+            st.write(f"🔍 QRコード生成のデバッグ:")
+            st.write(f"  User ID: {user_id}")
+            st.write(f"  Base URL: {base_url}")
+            
             qr_code = generate_user_qr_code(user_id, base_url)
+            st.write(f"  QR Code generated: {qr_code is not None}")
+            
             if qr_code:
-                display_qr_code(qr_code, "マイページQRコード")
+                # QRコードを直接表示
+                st.subheader("マイページQRコード")
+                st.image(qr_code, caption="マイページQRコード", use_container_width=True, width=200)
+                
+                # QRコードのURLも表示
+                qr_url = f"{base_url}/user/{user_id}"
+                st.write(f"**QRコードのURL:** {qr_url}")
+                
+                # ダウンロードボタン
                 download_qr_code_button(qr_code, f"qr_{user_id}.png", "QRコードをダウンロード")
+            else:
+                st.error("QRコードの生成に失敗しました")
         
         with col2:
             st.subheader("基本情報")
