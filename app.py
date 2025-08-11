@@ -47,17 +47,25 @@ if 'authenticated' not in st.session_state:
 def main():
     st.title(APP_CONFIG["app_name"])
     
-    # サイドバーにナビゲーション
-    if is_authenticated():
-        show_authenticated_navigation()
-    else:
-        show_unauthenticated_navigation()
+    # URLパラメータでユーザーIDをチェック
+    query_params = st.experimental_get_query_params()
+    user_id_param = query_params.get("user_id", [None])[0]
     
-    # メインコンテンツ
-    if is_authenticated():
-        show_main_content()
+    if user_id_param:
+        # 個別ユーザーページを表示
+        show_public_user_page(user_id_param)
     else:
-        show_login_register()
+        # 通常のナビゲーション
+        if is_authenticated():
+            show_authenticated_navigation()
+        else:
+            show_unauthenticated_navigation()
+        
+        # メインコンテンツ
+        if is_authenticated():
+            show_main_content()
+        else:
+            show_login_register()
 
 def show_authenticated_navigation():
     """認証済みユーザー用のナビゲーション"""
@@ -258,7 +266,7 @@ def show_mypage():
             st.write(f"🔍 QRコード生成のデバッグ:")
             st.write(f"  User ID: {user_id}")
             st.write(f"  Base URL: {base_url}")
-            st.write(f"  QR Code URL: {base_url}/user/{user_id}")
+            st.write(f"  QR Code URL: {base_url}/?user_id={user_id}")
             
             qr_code = generate_user_qr_code(user_id, base_url)
             st.write(f"  QR Code generated: {qr_code is not None}")
@@ -269,9 +277,9 @@ def show_mypage():
                 st.image(qr_code, caption="マイページQRコード", use_container_width=True, width=200)
                 
                 # QRコードのURLも表示
-                qr_url = f"{base_url}/user/{user_id}"
+                qr_url = f"{base_url}/?user_id={user_id}"
                 st.write(f"**QRコードのURL:** {qr_url}")
-                st.write(f"**マイページアクセス方法:** このQRコードをスキャンすると、あなたのマイページに直接アクセスできます")
+                st.write(f"**マイページアクセス方法:** このQRコードをスキャンすると、あなたの公開用マイページに直接アクセスできます。他のユーザーもこのQRコードであなたのプロフィールを見ることができます。")
                 
                 # ダウンロードボタン
                 download_qr_code_button(qr_code, f"qr_{user_id}.png", "QRコードをダウンロード")
@@ -572,6 +580,56 @@ def show_user_edit_form(user):
                 st.rerun()
             else:
                 st.error(f"更新エラー: {error}")
+
+def show_public_user_page(user_id):
+    """ユーザーの公開用マイページを表示"""
+    st.header("ユーザープロフィール")
+    
+    # ユーザー情報を取得
+    user = get_user_by_id(user_id)
+    
+    if not user:
+        st.error("ユーザーが見つかりません")
+        return
+    
+    # 公開用の情報のみ表示
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        # プロフィール写真
+        if user.get('photo_url'):
+            display_profile_image(user.get('photo_url'), "プロフィール写真", 200)
+        else:
+            st.image("https://via.placeholder.com/200x200?text=No+Photo", 
+                    caption="プロフィール写真なし", use_container_width=True, width=200)
+    
+    with col2:
+        st.subheader("基本情報")
+        st.write(f"**表示名:** {user.get('display_name', '未設定')}")
+        
+        st.subheader("プロフィール")
+        st.write(user.get('profile', 'プロフィールが設定されていません。'))
+        
+        st.subheader("興味のあるジャンル")
+        interests = user.get('interests', [])
+        if interests:
+            for interest in interests:
+                st.write(f"• {interest}")
+        else:
+            st.write("興味のあるジャンルが設定されていません。")
+        
+        st.subheader("SNSアカウント")
+        sns_accounts = user.get('sns_accounts', {})
+        if sns_accounts:
+            for platform, account in sns_accounts.items():
+                if account:
+                    st.write(f"**{platform.title()}:** {account}")
+        else:
+            st.write("SNSアカウントが設定されていません。")
+    
+    # 戻るボタン
+    if st.button("← メインページに戻る"):
+        st.rerun()
 
 if __name__ == "__main__":
     main()
