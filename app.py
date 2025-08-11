@@ -3,14 +3,20 @@ import os
 import base64
 from datetime import datetime
 import time
-from database import (
-    authenticate_user, create_user, get_user_by_id, update_user_profile,
-    get_all_users, delete_user, promote_to_admin, demote_from_admin,
-    create_admin_user, check_user_has_password, reset_user_password
-)
-from auth_utils import create_user_session, clear_user_session, get_current_user_id, is_authenticated, is_admin
-from qr_utils import generate_user_qr_code, display_qr_code
-from config import APP_CONFIG
+
+# 個別インポート
+try:
+    from database import (
+        authenticate_user, create_user, get_user_by_id, update_user_profile,
+        get_all_users, delete_user, promote_to_admin, demote_from_admin,
+        create_admin_user, check_user_has_password, reset_user_password
+    )
+    from auth_utils import create_user_session, clear_user_session, get_current_user_id, is_authenticated, is_admin
+    from qr_utils import generate_user_qr_code, display_qr_code
+    from config import APP_CONFIG
+except ImportError as e:
+    st.error(f"モジュールのインポートに失敗しました: {e}")
+    st.stop()
 
 # ページ設定
 st.set_page_config(
@@ -690,27 +696,6 @@ def show_user_edit_form(user):
                             st.error(f"詳細エラー: {str(e)}")
                             import traceback
                             st.code(traceback.format_exc())
-                        
-                        # セッション状態をクリア
-                        if "password_reset_processing" in st.session_state:
-                            del st.session_state.password_reset_processing
-                        
-                        # 成功メッセージを表示してからリロード
-                        st.success("🎉 パスワードリセット完了！")
-                        st.info("3秒後にページをリロードします...")
-                        time.sleep(3)
-                        st.rerun()
-                    else:
-                        st.error(f"❌ パスワードリセットエラー: {error}")
-                        st.error("詳細なエラー情報を確認してください。")
-                        
-                        # エラー時の詳細情報
-                        with st.expander("❌ エラー詳細", expanded=True):
-                            st.error(f"エラーメッセージ: {error}")
-                            st.error(f"エラータイプ: {type(error).__name__}")
-                            if hasattr(error, '__traceback__'):
-                                import traceback
-                                st.code(traceback.format_exc())
                         
                         # セッション状態をクリア
                         if "password_reset_processing" in st.session_state:
