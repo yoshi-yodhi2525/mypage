@@ -48,8 +48,7 @@ def main():
     st.title(APP_CONFIG["app_name"])
     
     # URLパラメータでユーザーIDをチェック
-    query_params = st.experimental_get_query_params()
-    user_id_param = query_params.get("user_id", [None])[0]
+    user_id_param = st.query_params.get("user_id", None)
     
     if user_id_param:
         # 個別ユーザーページを表示
