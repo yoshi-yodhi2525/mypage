@@ -298,6 +298,32 @@ def show_mypage():
                         st.write(f"**{platform.title()}:** {account}")
             else:
                 st.write("SNSアカウントが設定されていません。")
+            
+            # 友達リスト
+            st.subheader("👥 友達リスト")
+            friends = user.get('friends', [])
+            if friends:
+                st.write(f"**友達数:** {len(friends)}人")
+                for friend_id in friends:
+                    friend = get_user_by_id(friend_id)
+                    if friend:
+                        friend_url = f"{base_url}/?user_id={friend_id}"
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.write(f"• [{friend.get('display_name', 'Unknown')}]({friend_url})")
+                        with col2:
+                            if st.button(f"削除", key=f"remove_friend_{friend_id}"):
+                                # 友達リストから削除
+                                friends.remove(friend_id)
+                                update_data = {'friends': friends}
+                                success, error = update_user(user_id, update_data)
+                                if success:
+                                    st.success("友達を削除しました")
+                                    st.rerun()
+                                else:
+                                    st.error(f"削除エラー: {error}")
+            else:
+                st.info("友達がいません。他のユーザーの公開マイページで「友達になる」ボタンを押して友達を追加してください。")
 
 def show_profile_edit():
     """プロフィール編集画面"""
@@ -613,6 +639,40 @@ def show_public_user_page(user_id):
                     st.write(f"**{platform.title()}:** {account}")
         else:
             st.write("SNSアカウントが設定されていません。")
+    
+    # 友達になるボタン（ログイン済みユーザーのみ表示）
+    if is_authenticated():
+        current_user_id = get_current_user_id()
+        if current_user_id != user_id:  # 自分自身は友達になれない
+            # 既に友達かどうかチェック
+            current_user = get_user_by_id(current_user_id)
+            friends = current_user.get('friends', [])
+            
+            if user_id in friends:
+                st.success("✓ 既に友達です")
+                if st.button("友達を削除"):
+                    # 友達リストから削除
+                    friends.remove(user_id)
+                    update_data = {'friends': friends}
+                    success, error = update_user(current_user_id, update_data)
+                    if success:
+                        st.success("友達を削除しました")
+                        st.rerun()
+                    else:
+                        st.error(f"削除エラー: {error}")
+            else:
+                if st.button("友達になる"):
+                    # 友達リストに追加
+                    if 'friends' not in current_user:
+                        current_user['friends'] = []
+                    current_user['friends'].append(user_id)
+                    update_data = {'friends': current_user['friends']}
+                    success, error = update_user(current_user_id, update_data)
+                    if success:
+                        st.success("友達になりました！")
+                        st.rerun()
+                    else:
+                        st.error(f"追加エラー: {error}")
     
     # 戻るボタン
     if st.button("← メインページに戻る"):
