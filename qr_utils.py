@@ -1,8 +1,8 @@
 import pyqrcode
-import png
 import streamlit as st
 from io import BytesIO
 import base64
+from PIL import Image
 
 def generate_qr_code(data, size=10):
     """QRコードを生成する"""
