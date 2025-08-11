@@ -240,7 +240,7 @@ def show_mypage():
             display_profile_image(user.get('photo_url'), "プロフィール写真", 200)
             
             # QRコード生成
-            base_url = st.get_option("server.baseUrlPath") or "http://localhost:8501"
+            base_url = APP_CONFIG["base_url"]
             qr_code = generate_user_qr_code(user_id, base_url)
             if qr_code:
                 display_qr_code(qr_code, "マイページQRコード")

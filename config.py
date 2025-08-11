@@ -38,7 +38,8 @@ def get_firebase_config():
 APP_CONFIG = {
     "app_name": "イベント参加者マイページ",
     "page_title": "イベント参加者マイページ",
-    "page_icon": "🎫"
+    "page_icon": "🎫",
+    "base_url": "https://mypage-001.streamlit.app"
 }
 
 def initialize_firebase():
