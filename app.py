@@ -261,14 +261,7 @@ def show_mypage():
                 st.write(f"Error getting base_url: {e}")
                 base_url = "https://mypage-001.streamlit.app"
             
-            # QRコード生成のデバッグ情報
-            st.write(f"🔍 QRコード生成のデバッグ:")
-            st.write(f"  User ID: {user_id}")
-            st.write(f"  Base URL: {base_url}")
-            st.write(f"  QR Code URL: {base_url}/?user_id={user_id}")
-            
             qr_code = generate_user_qr_code(user_id, base_url)
-            st.write(f"  QR Code generated: {qr_code is not None}")
             
             if qr_code:
                 # QRコードを直接表示
