@@ -690,6 +690,7 @@ def show_public_user_page(user_id):
                     success, error = update_user(current_user_id, update_data)
                     if success:
                         st.success("友達になりました！")
+                        # 友達状態を更新して再表示
                         st.rerun()
                     else:
                         st.error(f"追加エラー: {error}")
@@ -704,6 +705,11 @@ def show_public_user_page(user_id):
     
     # 戻るボタン
     if st.button("← メインページに戻る"):
+        # セッション状態をリセットしてメインページに戻る
+        if "show_login" in st.session_state:
+            del st.session_state.show_login
+        # URLパラメータをクリアしてメインページに戻る
+        st.query_params.clear()
         st.rerun()
 
 if __name__ == "__main__":
