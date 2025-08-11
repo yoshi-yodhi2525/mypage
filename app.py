@@ -215,10 +215,10 @@ def show_mypage():
         
         with col1:
             if user.get('photo_url'):
-                st.image(user['photo_url'], caption="プロフィール写真", use_column_width=True)
+                st.image(user['photo_url'], caption="プロフィール写真", use_container_width=True)
             else:
                 st.image("https://via.placeholder.com/200x200?text=No+Photo", 
-                        caption="プロフィール写真なし", use_column_width=True)
+                        caption="プロフィール写真なし", use_container_width=True)
             
             # QRコード生成
             base_url = st.get_option("server.baseUrlPath") or "http://localhost:8501"

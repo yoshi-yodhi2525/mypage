@@ -38,7 +38,7 @@ def generate_user_qr_code(user_id, base_url):
 def display_qr_code(qr_buffer, caption="QRコード"):
     """QRコードをStreamlitで表示する"""
     if qr_buffer:
-        st.image(qr_buffer, caption=caption, use_column_width=True)
+        st.image(qr_buffer, caption=caption, use_container_width=True)
         return True
     return False
 
