@@ -22,7 +22,7 @@ def get_firebase_config():
         private_key = private_key.replace("\\n", "\n")
     
     return {
-    "type": "service_account",
+        "type": "service_account",
         "project_id": project_id,
         "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
         "private_key": private_key,

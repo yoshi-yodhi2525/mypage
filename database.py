@@ -48,7 +48,7 @@ def create_user(user_data):
             'display_name': user_data['display_name'],
             'profile': user_data.get('profile', ''),
             'interests': user_data.get('interests', []),
-            'photo_url': user_data.get('photo_url', ''),
+            'photo': user_data.get('photo', ''),  # photoフィールドとして保存
             'sns_accounts': user_data.get('sns_accounts', {}),
             'is_admin': False,
             'created_at': datetime.now(),
@@ -88,7 +88,7 @@ def create_admin_user(user_data):
             'display_name': user_data['display_name'],
             'profile': user_data.get('profile', ''),
             'interests': user_data.get('interests', []),
-            'photo_url': user_data.get('photo_url', ''),
+            'photo': user_data.get('photo', ''),  # photoフィールドとして保存
             'sns_accounts': user_data.get('sns_accounts', {}),
             'is_admin': True,  # 管理者フラグをTrueに設定
             'created_at': datetime.now(),
@@ -256,7 +256,7 @@ def reset_user_password(user_id, new_password):
         print(f"入力パスワードの型: {type(new_password)}")
         
         try:
-        password_hash = hash_password(new_password)
+            password_hash = hash_password(new_password)
             print("✅ パスワードハッシュ化完了")
             print(f"ハッシュ長: {len(password_hash)} bytes")
             print(f"ハッシュの型: {type(password_hash)}")
@@ -457,3 +457,23 @@ def search_users_by_interests(interests):
     except Exception as e:
         st.error(f"ユーザー検索エラー: {e}")
         return []
+
+def update_user_profile(user_id, update_data):
+    """ユーザーのプロフィール情報を更新する"""
+    try:
+        db = get_firestore_client()
+        if not db:
+            return False, "データベース接続エラー"
+        
+        # 更新日時を追加
+        update_data['updated_at'] = datetime.now()
+        
+        # photoフィールドがある場合はphotoとして保存（photo_urlではなく）
+        # データベースの構造に合わせて調整
+        
+        # Firestoreを更新
+        db.collection('users').document(user_id).update(update_data)
+        return True, None
+        
+    except Exception as e:
+        return False, f"プロフィール更新エラー: {e}"
