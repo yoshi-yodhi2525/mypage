@@ -647,6 +647,11 @@ def show_user_edit_form(user):
         
         with st.form(f"password_reset_{user['user_id']}"):
             st.subheader("新しいパスワード設定")
+            
+            # 処理中の状態を表示
+            if st.session_state.get("password_reset_processing", False) and st.session_state.get("password_reset_user_id") == user['user_id']:
+                st.warning("⏳ パスワードリセット処理中... しばらくお待ちください")
+            
             new_password = st.text_input("新しいパスワード", type="password", help="8文字以上の安全なパスワードを入力してください")
             confirm_password = st.text_input("新しいパスワード（確認）", type="password", help="上記と同じパスワードを再入力してください")
             
@@ -659,38 +664,74 @@ def show_user_edit_form(user):
                 elif confirm_password:
                     st.error("❌ パスワードが一致しません")
             
-            reset_submit = st.form_submit_button("🔐 パスワードをリセット", help="このボタンを押すとパスワードが更新されます")
+            # 処理中はボタンを無効化
+            reset_submit = st.form_submit_button(
+                "🔐 パスワードをリセット", 
+                help="このボタンを押すとパスワードが更新されます",
+                disabled=st.session_state.get("password_reset_processing", False)
+            )
             
             if reset_submit:
                 if new_password and confirm_password:
                     if new_password != confirm_password:
                         st.error("パスワードが一致しません。")
                     else:
-                        st.info(f"パスワードリセット処理中... ユーザーID: {user['user_id']}")
+                        # デバッグ情報を表示
+                        st.info(f"🔍 パスワードリセット処理開始")
+                        st.info(f"ユーザーID: {user['user_id']}")
+                        st.info(f"パスワード長: {len(new_password)}文字")
+                        
+                        # セッション状態に処理中フラグを設定
+                        st.session_state.password_reset_processing = True
+                        st.session_state.password_reset_user_id = user['user_id']
                         
                         # パスワードリセットを実行
-                        success, error = reset_user_password(user['user_id'], new_password)
-                        
-                        if success:
-                            st.success("✅ パスワードをリセットしました！")
-                            st.info("新しいパスワードでログインできるようになりました。")
+                        try:
+                            st.info("📡 Firebaseに接続中...")
+                            success, error = reset_user_password(user['user_id'], new_password)
                             
-                            # 成功情報を表示
-                            st.balloons()
+                            if success:
+                                st.success("✅ パスワードをリセットしました！")
+                                st.info("新しいパスワードでログインできるようになりました。")
+                                
+                                # 成功情報を表示
+                                st.balloons()
+                                
+                                # セッション状態をクリア
+                                if "password_reset_processing" in st.session_state:
+                                    del st.session_state.password_reset_processing
+                                if "password_reset_user_id" in st.session_state:
+                                    del st.session_state.password_reset_user_id
+                                
+                                # 少し待ってからページを再読み込み
+                                import time
+                                time.sleep(2)
+                                st.rerun()
+                            else:
+                                st.error(f"❌ パスワードリセットエラー: {error}")
+                                st.error("詳細なエラー情報を確認してください。")
+                                
+                                # エラーの詳細を表示
+                                with st.expander("🔍 エラー詳細"):
+                                    st.code(f"ユーザーID: {user['user_id']}")
+                                    st.code(f"エラーメッセージ: {error}")
+                                    st.info("Firebaseの設定やネットワーク接続を確認してください。")
+                                
+                                # セッション状態をクリア
+                                if "password_reset_processing" in st.session_state:
+                                    del st.session_state.password_reset_processing
+                                if "password_reset_user_id" in st.session_state:
+                                    del st.session_state.password_reset_user_id
+                                    
+                        except Exception as e:
+                            st.error(f"❌ 予期しないエラー: {e}")
+                            st.error("システムエラーが発生しました。")
                             
-                            # 少し待ってからページを再読み込み
-                            import time
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            st.error(f"❌ パスワードリセットエラー: {error}")
-                            st.error("詳細なエラー情報を確認してください。")
-                            
-                            # エラーの詳細を表示
-                            with st.expander("エラー詳細"):
-                                st.code(f"ユーザーID: {user['user_id']}")
-                                st.code(f"エラーメッセージ: {error}")
-                                st.info("Firebaseの設定やネットワーク接続を確認してください。")
+                            # セッション状態をクリア
+                            if "password_reset_processing" in st.session_state:
+                                del st.session_state.password_reset_processing
+                            if "password_reset_user_id" in st.session_state:
+                                del st.session_state.password_reset_user_id
                 else:
                     st.error("新しいパスワードを入力してください。")
     

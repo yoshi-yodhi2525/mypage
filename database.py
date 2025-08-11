@@ -223,26 +223,38 @@ def reset_user_password(user_id, new_password):
     """ユーザーのパスワードをリセットする（管理者用）"""
     try:
         # デバッグ情報
-        print(f"パスワードリセット開始: ユーザーID={user_id}")
+        print(f"=== パスワードリセット開始 ===")
+        print(f"ユーザーID: {user_id}")
+        print(f"パスワード長: {len(new_password)}文字")
+        print(f"タイムスタンプ: {datetime.now()}")
         
+        # データベース接続
+        print("📡 Firebase接続中...")
         db = get_firestore_client()
         if not db:
-            print("データベース接続エラー")
+            print("❌ データベース接続エラー")
             return False, "データベース接続エラー"
         
-        print("データベース接続成功")
+        print("✅ データベース接続成功")
         
         # ユーザーの存在確認
+        print(f"🔍 ユーザー存在確認中...")
         user_doc = db.collection('users').document(user_id).get()
         if not user_doc.exists:
-            print(f"ユーザーが見つかりません: {user_id}")
+            print(f"❌ ユーザーが見つかりません: {user_id}")
             return False, f"ユーザーID {user_id} が見つかりません"
         
-        print("ユーザー存在確認完了")
+        print("✅ ユーザー存在確認完了")
+        
+        # 現在のユーザー情報を表示
+        current_user = user_doc.to_dict()
+        print(f"現在のユーザー情報: {current_user.get('display_name', 'Unknown')} ({current_user.get('email', 'No email')})")
         
         # 新しいパスワードをハッシュ化
+        print("🔐 パスワードハッシュ化中...")
         password_hash = hash_password(new_password)
-        print("パスワードハッシュ化完了")
+        print("✅ パスワードハッシュ化完了")
+        print(f"ハッシュ長: {len(password_hash)} bytes")
         
         # パスワードをリセット
         update_data = {
@@ -250,15 +262,33 @@ def reset_user_password(user_id, new_password):
             'updated_at': datetime.now()
         }
         
-        print(f"更新データ: {update_data}")
+        print(f"📝 更新データ準備完了: {update_data}")
         
+        # データベース更新
+        print("💾 データベース更新中...")
         db.collection('users').document(user_id).update(update_data)
-        print("データベース更新完了")
+        print("✅ データベース更新完了")
         
+        # 更新後の確認
+        print("🔍 更新確認中...")
+        updated_doc = db.collection('users').document(user_id).get()
+        if updated_doc.exists:
+            updated_user = updated_doc.to_dict()
+            if 'password_hash' in updated_user and updated_user['password_hash'] == password_hash:
+                print("✅ パスワード更新確認完了")
+            else:
+                print("⚠️ パスワード更新確認で不一致")
+        
+        print("=== パスワードリセット完了 ===")
         return True, None
         
     except Exception as e:
-        print(f"パスワードリセットエラー: {e}")
+        print(f"=== パスワードリセットエラー ===")
+        print(f"エラータイプ: {type(e).__name__}")
+        print(f"エラーメッセージ: {str(e)}")
+        print(f"エラー詳細: {e}")
+        import traceback
+        print(f"スタックトレース: {traceback.format_exc()}")
         return False, f"パスワードリセットエラー: {e}"
 
 def check_user_has_password(user_id):
