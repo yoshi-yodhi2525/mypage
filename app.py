@@ -666,12 +666,16 @@ def show_user_edit_form(user):
             
             # 処理中はボタンを無効化
             reset_submit = st.form_submit_button(
-                "🔐 パスワードをリセット", 
+                "🔐 パスワードをリセット",
                 help="このボタンを押すとパスワードが更新されます",
                 disabled=st.session_state.get("password_reset_processing", False)
             )
             
+            # フォーム送信の確認
             if reset_submit:
+                st.info("🎯 フォームが送信されました！")
+                st.write("パスワードリセット処理を開始します...")
+                
                 if new_password and confirm_password:
                     if new_password != confirm_password:
                         st.error("パスワードが一致しません。")
@@ -689,6 +693,12 @@ def show_user_edit_form(user):
                         try:
                             st.info("📡 Firebaseに接続中...")
                             
+                            # 基本的な動作確認
+                            st.write("🔍 基本確認:")
+                            st.write(f"• ユーザーID: {user['user_id']}")
+                            st.write(f"• パスワード長: {len(new_password)}文字")
+                            st.write(f"• 現在時刻: {datetime.now()}")
+                            
                             # パスワードリセット処理の詳細ログ
                             with st.expander("🔍 パスワードリセット処理の詳細", expanded=True):
                                 st.info("処理開始...")
@@ -700,7 +710,24 @@ def show_user_edit_form(user):
                                 st.write("4. データベース更新...")
                                 st.write("5. 更新確認...")
                             
+                            # 関数呼び出し前の確認
+                            st.info("🚀 reset_user_password関数を呼び出します...")
+                            st.write(f"呼び出しパラメータ: user_id={user['user_id']}, password_length={len(new_password)}")
+                            
+                            # 関数呼び出し前の最終確認
+                            st.write("⚠️ 関数呼び出し直前の確認:")
+                            st.write(f"• ユーザーID: {user['user_id']}")
+                            st.write(f"• パスワード: {'*' * len(new_password)}")
+                            st.write(f"• パスワード長: {len(new_password)}文字")
+                            st.write(f"• パスワードが空でない: {bool(new_password)}")
+                            
                             success, error = reset_user_password(user['user_id'], new_password)
+                            
+                            # 関数呼び出し後の確認
+                            st.info("📋 関数呼び出し完了")
+                            st.write(f"戻り値: success={success}, error={error}")
+                            st.write(f"successの型: {type(success)}")
+                            st.write(f"errorの型: {type(error)}")
                             
                             if success:
                                 st.success("✅ パスワードをリセットしました！")
