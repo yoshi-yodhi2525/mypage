@@ -47,16 +47,16 @@ if 'authenticated' not in st.session_state:
 def main():
     st.title(APP_CONFIG["app_name"])
     
+    # セッション状態でログイン画面の表示を制御
+    if st.session_state.get("show_login", False):
+        # ログイン画面を表示
+        show_login_register()
+        return
+    
     # URLパラメータでユーザーIDをチェック
     user_id_param = st.query_params.get("user_id", None)
     
-    # ログイン画面に移動するフラグ
-    show_login = st.query_params.get("login", None)
-    
-    if show_login == "true":
-        # ログイン画面を表示
-        show_login_register()
-    elif user_id_param:
+    if user_id_param:
         # 個別ユーザーページを表示
         show_public_user_page(user_id_param)
     else:
@@ -143,6 +143,9 @@ def show_login_form():
                             user.get('is_admin', False)
                         )
                         st.success("ログインしました！")
+                        # ログイン画面表示フラグをリセット
+                        if "show_login" in st.session_state:
+                            del st.session_state.show_login
                         st.rerun()
                     else:
                         st.error(f"ログインエラー: {error}")
@@ -695,8 +698,9 @@ def show_public_user_page(user_id):
     else:
         st.info("友達機能を利用するにはログインが必要です。")
         if st.button("ログインする"):
-            # URLパラメータを使ってログイン画面に移動
-            st.switch_page("app.py?login=true")
+            # セッション状態を使ってログイン画面に移動
+            st.session_state.show_login = True
+            st.rerun()
     
     # 戻るボタン
     if st.button("← メインページに戻る"):
