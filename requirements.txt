@@ -1,0 +1,6 @@
+streamlit==1.28.1
+firebase-admin==6.2.0
+pyqrcode==1.2.1
+pypng==0.20220715
+Pillow==10.0.1
+python-dotenv==1.0.0
