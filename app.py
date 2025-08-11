@@ -521,14 +521,38 @@ def show_admin_panel():
                         if st.button(f"編集 {user['user_id']}", key=f"edit_{user['user_id']}"):
                             show_user_edit_form(user)
                         
-                        if st.button(f"削除 {user['user_id']}", key=f"delete_{user['user_id']}"):
-                            if st.button(f"本当に削除しますか？ {user['user_id']}", key=f"confirm_delete_{user['user_id']}"):
-                                success, error = delete_user(user['user_id'])
-                                if success:
-                                    st.success("ユーザーを削除しました。")
+                        # 削除確認の状態管理
+                        delete_key = f"delete_{user['user_id']}"
+                        confirm_key = f"confirm_delete_{user['user_id']}"
+                        
+                        if delete_key not in st.session_state:
+                            st.session_state[delete_key] = False
+                        
+                        if st.session_state[delete_key]:
+                            # 削除確認モード
+                            st.warning(f"⚠️ ユーザー '{user['display_name']}' を削除しますか？")
+                            col_confirm1, col_confirm2 = st.columns(2)
+                            
+                            with col_confirm1:
+                                if st.button("✅ 削除する", key=f"yes_delete_{user['user_id']}"):
+                                    success, error = delete_user(user['user_id'])
+                                    if success:
+                                        st.success("ユーザーを削除しました。")
+                                        # セッション状態をクリア
+                                        del st.session_state[delete_key]
+                                        st.rerun()
+                                    else:
+                                        st.error(f"削除エラー: {error}")
+                            
+                            with col_confirm2:
+                                if st.button("❌ キャンセル", key=f"cancel_delete_{user['user_id']}"):
+                                    st.session_state[delete_key] = False
                                     st.rerun()
-                                else:
-                                    st.error(f"削除エラー: {error}")
+                        else:
+                            # 通常の削除ボタン
+                            if st.button(f"🗑️ 削除", key=f"delete_btn_{user['user_id']}"):
+                                st.session_state[delete_key] = True
+                                st.rerun()
         else:
             st.info("ユーザーが登録されていません。")
     
