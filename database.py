@@ -222,21 +222,43 @@ def update_user_password(user_id, new_password):
 def reset_user_password(user_id, new_password):
     """ユーザーのパスワードをリセットする（管理者用）"""
     try:
+        # デバッグ情報
+        print(f"パスワードリセット開始: ユーザーID={user_id}")
+        
         db = get_firestore_client()
         if not db:
+            print("データベース接続エラー")
             return False, "データベース接続エラー"
+        
+        print("データベース接続成功")
+        
+        # ユーザーの存在確認
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            print(f"ユーザーが見つかりません: {user_id}")
+            return False, f"ユーザーID {user_id} が見つかりません"
+        
+        print("ユーザー存在確認完了")
         
         # 新しいパスワードをハッシュ化
         password_hash = hash_password(new_password)
+        print("パスワードハッシュ化完了")
         
         # パスワードをリセット
-        db.collection('users').document(user_id).update({
+        update_data = {
             'password_hash': password_hash,
             'updated_at': datetime.now()
-        })
+        }
+        
+        print(f"更新データ: {update_data}")
+        
+        db.collection('users').document(user_id).update(update_data)
+        print("データベース更新完了")
+        
         return True, None
         
     except Exception as e:
+        print(f"パスワードリセットエラー: {e}")
         return False, f"パスワードリセットエラー: {e}"
 
 def check_user_has_password(user_id):

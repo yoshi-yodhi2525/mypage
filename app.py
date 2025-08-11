@@ -635,23 +635,62 @@ def show_user_edit_form(user):
     st.subheader(f"ユーザー編集: {user['display_name']}")
     
     # パスワードリセットセクション
-    with st.expander("パスワードリセット"):
-        st.info("ユーザーのパスワードをリセットできます。")
+    with st.expander("🔐 パスワードリセット"):
+        st.info("ユーザーのパスワードをリセットできます。新しいパスワードは即座に有効になります。")
+        
+        # 現在のパスワード状況を表示
+        current_user = get_user_by_id(user['user_id'])
+        if current_user and 'password_hash' in current_user and current_user['password_hash']:
+            st.success("✅ 現在パスワードが設定されています")
+        else:
+            st.warning("⚠️ 現在パスワードが設定されていません")
+        
         with st.form(f"password_reset_{user['user_id']}"):
-            new_password = st.text_input("新しいパスワード", type="password")
-            confirm_password = st.text_input("新しいパスワード（確認）", type="password")
-            reset_submit = st.form_submit_button("パスワードをリセット")
+            st.subheader("新しいパスワード設定")
+            new_password = st.text_input("新しいパスワード", type="password", help="8文字以上の安全なパスワードを入力してください")
+            confirm_password = st.text_input("新しいパスワード（確認）", type="password", help="上記と同じパスワードを再入力してください")
+            
+            # パスワード強度チェック
+            if new_password:
+                if len(new_password) < 8:
+                    st.warning("⚠️ パスワードは8文字以上にしてください")
+                elif new_password == confirm_password:
+                    st.success("✅ パスワードが一致しています")
+                elif confirm_password:
+                    st.error("❌ パスワードが一致しません")
+            
+            reset_submit = st.form_submit_button("🔐 パスワードをリセット", help="このボタンを押すとパスワードが更新されます")
             
             if reset_submit:
                 if new_password and confirm_password:
                     if new_password != confirm_password:
                         st.error("パスワードが一致しません。")
                     else:
+                        st.info(f"パスワードリセット処理中... ユーザーID: {user['user_id']}")
+                        
+                        # パスワードリセットを実行
                         success, error = reset_user_password(user['user_id'], new_password)
+                        
                         if success:
-                            st.success("パスワードをリセットしました！")
+                            st.success("✅ パスワードをリセットしました！")
+                            st.info("新しいパスワードでログインできるようになりました。")
+                            
+                            # 成功情報を表示
+                            st.balloons()
+                            
+                            # 少し待ってからページを再読み込み
+                            import time
+                            time.sleep(2)
+                            st.rerun()
                         else:
-                            st.error(f"パスワードリセットエラー: {error}")
+                            st.error(f"❌ パスワードリセットエラー: {error}")
+                            st.error("詳細なエラー情報を確認してください。")
+                            
+                            # エラーの詳細を表示
+                            with st.expander("エラー詳細"):
+                                st.code(f"ユーザーID: {user['user_id']}")
+                                st.code(f"エラーメッセージ: {error}")
+                                st.info("Firebaseの設定やネットワーク接続を確認してください。")
                 else:
                     st.error("新しいパスワードを入力してください。")
     
