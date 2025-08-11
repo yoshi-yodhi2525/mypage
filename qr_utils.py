@@ -32,7 +32,8 @@ def generate_qr_code(data, size=10):
 
 def generate_user_qr_code(user_id, base_url):
     """ユーザーのマイページURL用のQRコードを生成する"""
-    user_url = f"{base_url}/user/{user_id}"
+    # マイページのメインURLを生成（ログイン後にマイページにアクセス）
+    user_url = f"{base_url}"
     return generate_qr_code(user_url)
 
 def display_qr_code(qr_buffer, caption="QRコード"):
