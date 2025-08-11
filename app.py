@@ -632,6 +632,9 @@ def show_admin_panel():
 
 def show_user_edit_form(user):
     """ユーザー編集フォーム（管理者用）"""
+    # 必要な関数をインポート
+    from database import get_user_by_id, check_user_has_password
+    
     st.subheader(f"ユーザー編集: {user['display_name']}")
     
     # パスワードリセットセクション
