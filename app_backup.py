@@ -303,27 +303,27 @@ def show_profile_edit():
     
     if user:
         with st.form("profile_edit_form"):
-            new_display_name = st.text_input("表示名", value=user.get('display_name', ''))
-            new_profile = st.text_area("プロフィール", value=user.get('profile', ''))
-            new_interests = st.multiselect(
+            display_name = st.text_input("表示名", value=user.get('display_name', ''))
+            profile = st.text_area("プロフィール", value=user.get('profile', ''))
+            interests = st.multiselect(
                 "興味のあるジャンル",
                 ["技術", "音楽", "スポーツ", "料理", "旅行", "アート", "ゲーム", "その他"],
                 default=user.get('interests', [])
             )
             
             # 写真アップロード
-            uploaded_file = st.file_uploader("プロフィール写真", type=['png', 'jpg', 'jpeg'], key="edit_photo")
+            current_photo = user.get('photo')
+            if current_photo:
+                st.subheader("現在の写真")
+                display_profile_image(current_photo, "現在の写真", 150)
+            
+            uploaded_file = st.file_uploader("新しい写真をアップロード", type=['png', 'jpg', 'jpeg'], key="edit_photo")
             
             submit = st.form_submit_button("更新")
             
             if submit:
-                update_data = {
-                    'display_name': new_display_name,
-                    'profile': new_profile,
-                    'interests': new_interests
-                }
-                
                 # 写真の処理
+                photo_data = current_photo
                 if uploaded_file is not None:
                     try:
                         if uploaded_file.size > 5 * 1024 * 1024:
@@ -333,17 +333,24 @@ def show_profile_edit():
                         photo_bytes = uploaded_file.read()
                         photo_base64 = base64.b64encode(photo_bytes).decode('utf-8')
                         photo_data = f"data:image/{uploaded_file.type};base64,{photo_base64}"
-                        update_data['photo'] = photo_data
                         st.success("写真がアップロードされました")
                     except Exception as e:
                         st.error(f"❌ 写真のアップロードに失敗しました: {e}")
                         return
                 
+                # プロフィールを更新
+                update_data = {
+                    'display_name': display_name,
+                    'profile': profile,
+                    'interests': interests,
+                    'photo': photo_data
+                }
+                
                 success, error = update_user_profile(user_id, update_data)
                 if success:
                     st.success("プロフィールを更新しました！")
                     st.balloons()
-                    time.sleep(2)
+                    time.sleep(3)
                     st.rerun()
                 else:
                     st.error(f"更新エラー: {error}")
@@ -354,131 +361,174 @@ def show_admin_panel():
     """管理者パネル"""
     st.header("👑 管理者パネル")
     
-    # 管理者ユーザー作成
-    st.subheader("管理者ユーザー作成")
-    with st.form("create_admin_form"):
-        admin_email = st.text_input("管理者メールアドレス")
-        admin_password = st.text_input("管理者パスワード", type="password")
-        admin_display_name = st.text_input("表示名")
-        submit_admin = st.form_submit_button("管理者ユーザー作成")
+    admin_tab1, admin_tab2, admin_tab3 = st.tabs(["ユーザー管理", "権限管理", "新規管理者作成"])
+    
+    with admin_tab1:
+        st.subheader("ユーザー管理")
+        users = get_all_users()
         
-        if submit_admin:
-            if admin_email and admin_password and admin_display_name:
-                if len(admin_password) < 8:
-                    st.error("パスワードは8文字以上で入力してください。")
-                else:
-                    user_id, error = create_admin_user(admin_email, admin_password, admin_display_name)
-                    if user_id:
-                        st.success("管理者ユーザーを作成しました！")
-                        st.balloons()
-                    else:
-                        st.error(f"管理者ユーザー作成エラー: {error}")
-            else:
-                st.error("すべての項目を入力してください。")
-    
-    # ユーザー管理
-    st.subheader("ユーザー管理")
-    users = get_all_users()
-    
-    if users:
-        for user in users:
-            with st.expander(f"👤 {user.get('display_name', 'Unknown')} ({user.get('email', 'No email')})"):
-                col1, col2, col3 = st.columns([2, 1, 1])
-                
-                with col1:
-                    st.write(f"**ユーザーID:** {user.get('user_id', 'Unknown')}")
-                    st.write(f"**管理者:** {'✅' if user.get('is_admin', False) else '❌'}")
-                    st.write(f"**登録日:** {user.get('created_at', 'Unknown')}")
-                
-                with col2:
-                    if user.get('is_admin', False):
-                        if st.button("👤 一般ユーザーに変更", key=f"demote_{user['user_id']}"):
-                            success, error = demote_from_admin(user['user_id'])
-                            if success:
-                                st.success("一般ユーザーに変更しました")
-                                st.rerun()
-                            else:
-                                st.error(f"変更エラー: {error}")
-                    else:
-                        if st.button("👑 管理者に昇格", key=f"promote_{user['user_id']}"):
-                            success, error = promote_to_admin(user['user_id'])
-                            if success:
-                                st.success("管理者に昇格しました")
-                                st.rerun()
-                            else:
-                                st.error(f"昇格エラー: {error}")
-                
-                with col3:
-                    if st.button("❌ 削除", key=f"delete_{user['user_id']}"):
-                        if st.checkbox(f"本当に {user.get('display_name', 'Unknown')} を削除しますか？"):
-                            success, error = delete_user(user['user_id'])
-                            if success:
-                                st.success("ユーザーを削除しました")
-                                st.rerun()
-                            else:
-                                st.error(f"削除エラー: {error}")
-                
-                # パスワードリセット
-                if check_user_has_password(user['user_id']):
-                    st.info("このユーザーはパスワードを設定済みです")
-                else:
-                    st.warning("このユーザーはパスワードを設定していません")
-                    with st.form(f"reset_password_{user['user_id']}"):
-                        new_password = st.text_input("新しいパスワード", type="password", key=f"new_pass_{user['user_id']}")
-                        confirm_password = st.text_input("パスワード確認", type="password", key=f"confirm_pass_{user['user_id']}")
-                        reset_submit = st.form_submit_button("パスワードリセット")
+        if users:
+            for user in users:
+                if user['user_id'] != get_current_user_id():
+                    with st.expander(f"{user['display_name']} ({user['email']})"):
+                        st.write(f"**ユーザーID:** {user['user_id']}")
+                        st.write(f"**表示名:** {user.get('display_name', '未設定')}")
+                        st.write(f"**メールアドレス:** {user.get('email', '未設定')}")
+                        st.write(f"**プロフィール:** {user.get('profile', '未設定')}")
+                        st.write(f"**管理者権限:** {'はい' if user.get('is_admin', False) else 'いいえ'}")
                         
-                        if reset_submit:
-                            if not new_password or not confirm_password:
-                                st.error("新しいパスワードと確認パスワードを入力してください")
-                            elif new_password != confirm_password:
-                                st.error("パスワードが一致しません")
-                            elif len(new_password) < 8:
-                                st.error("パスワードは8文字以上で入力してください")
-                            else:
-                                st.info("パスワードリセット処理を開始します...")
-                                
-                                success, error = reset_user_password(user['user_id'], new_password)
-                                
+                        if st.button(f"✏️ 編集", key=f"edit_{user['user_id']}"):
+                            show_user_edit_form(user)
+                        
+                        delete_key = f"delete_confirm_{user['user_id']}"
+                        if delete_key not in st.session_state:
+                            st.session_state[delete_key] = False
+                        
+                        if st.session_state[delete_key]:
+                            st.warning(f"⚠️ ユーザー '{user['display_name']}' を削除しますか？")
+                            col_confirm1, col_confirm2 = st.columns(2)
+                            
+                            with col_confirm1:
+                                if st.button("✅ 削除する", key=f"yes_delete_{user['user_id']}"):
+                                    success, error = delete_user(user['user_id'])
+                                    if success:
+                                        st.success("ユーザーを削除しました。")
+                                        del st.session_state[delete_key]
+                                        st.rerun()
+                                    else:
+                                        st.error(f"削除エラー: {error}")
+                            
+                            with col_confirm2:
+                                if st.button("❌ キャンセル", key=f"cancel_delete_{user['user_id']}"):
+                                    st.session_state[delete_key] = False
+                                    st.rerun()
+                        else:
+                            if st.button(f"🗑️ 削除", key=f"delete_btn_{user['user_id']}"):
+                                st.session_state[delete_key] = True
+                                st.rerun()
+        else:
+            st.info("ユーザーが登録されていません。")
+    
+    with admin_tab2:
+        st.subheader("ユーザー権限管理")
+        users = get_all_users()
+        
+        if users:
+            for user in users:
+                if user['user_id'] != get_current_user_id():
+                    with st.expander(f"{user['display_name']} ({user['email']})"):
+                        current_admin_status = user.get('is_admin', False)
+                        st.write(f"**現在の権限:** {'管理者' if current_admin_status else '一般ユーザー'}")
+                        
+                        if current_admin_status:
+                            if st.button(f"管理者権限を削除 {user['user_id']}", key=f"demote_{user['user_id']}"):
+                                success, error = demote_from_admin(user['user_id'])
                                 if success:
-                                    st.success("✅ パスワードをリセットしました！")
-                                    st.info("新しいパスワードでログインできるようになりました。")
-                                    st.balloons()
-                                    time.sleep(3)
+                                    st.success("管理者権限を削除しました。")
                                     st.rerun()
                                 else:
-                                    st.error(f"❌ パスワードリセットエラー: {error}")
-    else:
-        st.info("ユーザーが見つかりません")
+                                    st.error(f"権限削除エラー: {error}")
+                        else:
+                            if st.button(f"管理者に昇格 {user['user_id']}", key=f"promote_{user['user_id']}"):
+                                success, error = promote_to_admin(user['user_id'])
+                                if success:
+                                    st.success("管理者に昇格しました。")
+                                    st.rerun()
+                                else:
+                                    st.error(f"昇格エラー: {error}")
+        else:
+            st.info("ユーザーが登録されていません。")
+    
+    with admin_tab3:
+        st.subheader("新規管理者作成")
+        st.info("新しい管理者ユーザーを作成します。")
+        
+        with st.form("create_admin_form"):
+            admin_email = st.text_input("メールアドレス")
+            admin_password = st.text_input("パスワード", type="password")
+            admin_confirm_password = st.text_input("パスワード（確認）", type="password")
+            admin_display_name = st.text_input("表示名")
+            admin_profile = st.text_area("プロフィール")
+            admin_interests = st.multiselect(
+                "興味のあるジャンル",
+                ["技術", "音楽", "スポーツ", "料理", "旅行", "アート", "ゲーム", "その他"]
+            )
+            
+            submit = st.form_submit_button("管理者ユーザーを作成")
+            
+            if submit:
+                if admin_email and admin_password and admin_display_name:
+                    if admin_password != admin_confirm_password:
+                        st.error("パスワードが一致しません。")
+                        return
+                    
+                    admin_data = {
+                        'email': admin_email,
+                        'password': admin_password,
+                        'display_name': admin_display_name,
+                        'profile': admin_profile,
+                        'interests': admin_interests
+                    }
+                    
+                    user_id, error = create_admin_user(admin_data)
+                    if user_id:
+                        st.success("管理者ユーザーを作成しました！")
+                        st.rerun()
+                    else:
+                        st.error(f"作成エラー: {error}")
+                else:
+                    st.error("必須項目を入力してください。")
 
 def show_user_edit_form(user):
-    """ユーザー編集フォーム"""
-    st.subheader(f"ユーザー編集: {user.get('display_name', 'Unknown')}")
+    """ユーザー編集フォーム（管理者用）"""
+    st.subheader(f"ユーザー編集: {user['display_name']}")
     
-    with st.form(f"user_edit_{user['user_id']}"):
-        new_display_name = st.text_input("表示名", value=user.get('display_name', ''))
-        new_profile = st.text_area("プロフィール", value=user.get('profile', ''))
-        new_interests = st.multiselect(
-            "興味のあるジャンル",
-            ["技術", "音楽", "スポーツ", "料理", "旅行", "アート", "ゲーム", "その他"],
-            default=user.get('interests', [])
-        )
+    st.write(f"**ユーザーID:** {user['user_id']}")
+    st.write(f"**メールアドレス:** {user.get('email', 'No email')}")
+    st.write(f"**現在の表示名:** {user.get('display_name', 'No name')}")
+    
+    # パスワードリセット
+    with st.expander("🔐 パスワードリセット", expanded=True):
+        st.info("ユーザーのパスワードをリセットします。")
         
-        submit = st.form_submit_button("更新")
+        col1, col2 = st.columns(2)
+        with col1:
+            new_password = st.text_input("新しいパスワード", type="password", key=f"new_pass_{user['user_id']}")
+        with col2:
+            confirm_password = st.text_input("パスワード（確認）", type="password", key=f"confirm_pass_{user['user_id']}")
         
-        if submit:
-            update_data = {
-                'display_name': new_display_name,
-                'profile': new_profile,
-                'interests': new_interests
-            }
-            
-            success, error = update_user_profile(user['user_id'], update_data)
-            if success:
-                st.success("ユーザー情報を更新しました！")
-                st.rerun()
+        if new_password:
+            if len(new_password) < 8:
+                st.warning("⚠️ パスワードは8文字以上で入力してください")
             else:
-                st.error(f"更新エラー: {error}")
+                st.success("✅ パスワードの長さは適切です")
+        
+        if new_password and confirm_password:
+            if new_password == confirm_password:
+                st.success("✅ パスワードが一致しています")
+            else:
+                st.error("❌ パスワードが一致しません")
+        
+        if st.button("🔐 パスワードをリセット", key=f"reset_pass_{user['user_id']}"):
+            if not new_password or not confirm_password:
+                st.error("新しいパスワードと確認パスワードを入力してください")
+            elif new_password != confirm_password:
+                st.error("パスワードが一致しません")
+            elif len(new_password) < 8:
+                st.error("パスワードは8文字以上で入力してください")
+            else:
+                st.info("パスワードリセット処理を開始します...")
+                
+                success, error = reset_user_password(user['user_id'], new_password)
+                
+                if success:
+                    st.success("✅ パスワードをリセットしました！")
+                    st.info("新しいパスワードでログインできるようになりました。")
+                    st.balloons()
+                    time.sleep(3)
+                    st.rerun()
+                else:
+                    st.error(f"❌ パスワードリセットエラー: {error}")
 
 def show_public_user_page(user_id):
     """公開ユーザーページ"""
