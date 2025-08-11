@@ -4,6 +4,7 @@ from auth_utils import *
 from database import *
 from qr_utils import *
 import os
+import time
 
 def display_profile_image(image_data, caption="プロフィール写真", width=200):
     """プロフィール画像を安全に表示する"""
@@ -51,6 +52,23 @@ def main():
     if st.session_state.get("show_login", False):
         # ログイン画面を表示
         show_login_register()
+        return
+    
+    # メインページに戻るフラグの処理
+    if st.session_state.get("return_to_main", False):
+        # フラグをクリア
+        del st.session_state.return_to_main
+        # 通常のナビゲーションを表示
+        if is_authenticated():
+            show_authenticated_navigation()
+        else:
+            show_unauthenticated_navigation()
+        
+        # メインコンテンツ
+        if is_authenticated():
+            show_main_content()
+        else:
+            show_login_register()
         return
     
     # URLパラメータでユーザーIDをチェック
@@ -668,6 +686,11 @@ def show_public_user_page(user_id):
             current_user = get_user_by_id(current_user_id)
             friends = current_user.get('friends', [])
             
+            # 友達追加後のメッセージ表示
+            if st.session_state.get("friend_added", False):
+                st.success("友達になりました！")
+                del st.session_state.friend_added
+            
             if user_id in friends:
                 st.success("✓ 既に友達です")
                 if st.button("友達を削除"):
@@ -689,8 +712,8 @@ def show_public_user_page(user_id):
                     update_data = {'friends': current_user['friends']}
                     success, error = update_user(current_user_id, update_data)
                     if success:
-                        st.success("友達になりました！")
                         # 友達状態を更新して再表示
+                        st.session_state.friend_added = True
                         st.rerun()
                     else:
                         st.error(f"追加エラー: {error}")
@@ -708,6 +731,8 @@ def show_public_user_page(user_id):
         # セッション状態をリセットしてメインページに戻る
         if "show_login" in st.session_state:
             del st.session_state.show_login
+        # メインページに戻るフラグを設定
+        st.session_state.return_to_main = True
         # URLパラメータをクリアしてメインページに戻る
         st.query_params.clear()
         st.rerun()
