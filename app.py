@@ -785,7 +785,7 @@ def show_user_edit_form(user):
                                 # パスワード更新の確認
                                 st.info("🔍 パスワード更新の確認中...")
                                 try:
-                                    from database import check_user_has_password
+                                    from database import check_user_has_password, get_user_by_id
                                     has_password = check_user_has_password(user['user_id'])
                                     if has_password:
                                         st.success("✅ データベースにパスワードが正しく保存されました")
