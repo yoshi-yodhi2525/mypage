@@ -294,18 +294,39 @@ def reset_user_password(user_id, new_password):
 def check_user_has_password(user_id):
     """ユーザーがパスワードを持っているかチェックする"""
     try:
+        print(f"=== パスワード確認開始 ===")
+        print(f"ユーザーID: {user_id}")
+        
         db = get_firestore_client()
         if not db:
+            print("❌ データベース接続エラー")
             return False
+        
+        print("✅ データベース接続成功")
         
         user_doc = db.collection('users').document(user_id).get()
         if user_doc.exists:
             user_data = user_doc.to_dict()
-            return 'password_hash' in user_data and user_data['password_hash'] is not None
-        return False
+            has_password = 'password_hash' in user_data and user_data['password_hash'] is not None
+            
+            print(f"ユーザー情報: {user_data.get('display_name', 'Unknown')}")
+            print(f"パスワードハッシュ存在: {has_password}")
+            if has_password:
+                print(f"パスワードハッシュ長: {len(user_data['password_hash'])} bytes")
+                print(f"パスワードハッシュ内容: {user_data['password_hash'][:50]}...")
+            
+            print("=== パスワード確認完了 ===")
+            return has_password
+        else:
+            print("❌ ユーザーが見つかりません")
+            return False
         
     except Exception as e:
-        st.error(f"パスワードチェックエラー: {e}")
+        print(f"=== パスワード確認エラー ===")
+        print(f"エラータイプ: {type(e).__name__}")
+        print(f"エラーメッセージ: {str(e)}")
+        import traceback
+        print(f"スタックトレース: {traceback.format_exc()}")
         return False
 
 def get_all_users():

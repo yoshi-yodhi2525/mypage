@@ -697,6 +697,34 @@ def show_user_edit_form(user):
                                 # 成功情報を表示
                                 st.balloons()
                                 
+                                # パスワード更新の確認
+                                st.info("🔍 パスワード更新の確認中...")
+                                try:
+                                    from database import check_user_has_password
+                                    has_password = check_user_has_password(user['user_id'])
+                                    if has_password:
+                                        st.success("✅ データベースにパスワードが正しく保存されました")
+                                        
+                                        # テストログインの確認
+                                        st.info("🔐 パスワード検証テスト中...")
+                                        try:
+                                            from database import authenticate_user
+                                            user_info = get_user_by_id(user['user_id'])
+                                            if user_info:
+                                                test_success, test_error = authenticate_user(user_info['email'], new_password)
+                                                if test_success:
+                                                    st.success("✅ 新しいパスワードでの認証テスト成功！")
+                                                else:
+                                                    st.warning(f"⚠️ パスワード認証テスト失敗: {test_error}")
+                                            else:
+                                                st.warning("⚠️ ユーザー情報の取得に失敗")
+                                        except Exception as e:
+                                            st.warning(f"⚠️ パスワード認証テストエラー: {e}")
+                                    else:
+                                        st.warning("⚠️ パスワードの保存確認に失敗しました")
+                                except Exception as e:
+                                    st.warning(f"⚠️ パスワード確認エラー: {e}")
+                                
                                 # セッション状態をクリア
                                 if "password_reset_processing" in st.session_state:
                                     del st.session_state.password_reset_processing
@@ -705,7 +733,7 @@ def show_user_edit_form(user):
                                 
                                 # 少し待ってからページを再読み込み
                                 import time
-                                time.sleep(2)
+                                time.sleep(3)
                                 st.rerun()
                             else:
                                 st.error(f"❌ パスワードリセットエラー: {error}")
