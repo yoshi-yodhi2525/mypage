@@ -50,7 +50,13 @@ def main():
     # URLパラメータでユーザーIDをチェック
     user_id_param = st.query_params.get("user_id", None)
     
-    if user_id_param:
+    # ログイン画面に移動するフラグ
+    show_login = st.query_params.get("login", None)
+    
+    if show_login == "true":
+        # ログイン画面を表示
+        show_login_register()
+    elif user_id_param:
         # 個別ユーザーページを表示
         show_public_user_page(user_id_param)
     else:
@@ -689,7 +695,8 @@ def show_public_user_page(user_id):
     else:
         st.info("友達機能を利用するにはログインが必要です。")
         if st.button("ログインする"):
-            st.rerun()
+            # URLパラメータを使ってログイン画面に移動
+            st.switch_page("app.py?login=true")
     
     # 戻るボタン
     if st.button("← メインページに戻る"):
