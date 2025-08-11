@@ -256,7 +256,7 @@ def reset_user_password(user_id, new_password):
         print(f"入力パスワードの型: {type(new_password)}")
         
         try:
-            password_hash = hash_password(new_password)
+        password_hash = hash_password(new_password)
             print("✅ パスワードハッシュ化完了")
             print(f"ハッシュ長: {len(password_hash)} bytes")
             print(f"ハッシュの型: {type(password_hash)}")
@@ -407,7 +407,7 @@ def check_user_has_password(user_id):
             return has_password
         else:
             print("❌ ユーザーが見つかりません")
-            return False
+        return False
         
     except Exception as e:
         print(f"=== パスワード確認エラー ===")
