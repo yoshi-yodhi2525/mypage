@@ -31,10 +31,26 @@ APP_CONFIG = {
 def initialize_firebase():
     """Firebaseを初期化する"""
     try:
+        # 環境変数のデバッグ情報を表示
+        st.write("🔍 Firebase設定のデバッグ情報:")
+        st.write(f"Project ID: {os.getenv('FIREBASE_PROJECT_ID')}")
+        st.write(f"Client Email: {os.getenv('FIREBASE_CLIENT_EMAIL')}")
+        st.write(f"Private Key ID: {os.getenv('FIREBASE_PRIVATE_KEY_ID')}")
+        st.write(f"Private Key: {'設定済み' if os.getenv('FIREBASE_PRIVATE_KEY') else '未設定'}")
+        
+        # 必須フィールドのチェック
+        required_fields = ['FIREBASE_PROJECT_ID', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_CLIENT_EMAIL']
+        missing_fields = [field for field in required_fields if not os.getenv(field)]
+        
+        if missing_fields:
+            st.error(f"❌ 以下の環境変数が設定されていません: {', '.join(missing_fields)}")
+            return False
+        
         # 既存のアプリが初期化されているかチェック
         if not firebase_admin._apps:
             cred = credentials.Certificate(FIREBASE_CONFIG)
             initialize_app(cred)
+            st.success("✅ Firebase初期化成功")
         return True
     except Exception as e:
         st.error(f"Firebase初期化エラー: {e}")
