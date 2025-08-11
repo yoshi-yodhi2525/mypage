@@ -5,6 +5,29 @@ from database import *
 from qr_utils import *
 import os
 
+def display_profile_image(image_data, caption="プロフィール写真", width=200):
+    """プロフィール画像を安全に表示する"""
+    try:
+        if image_data:
+            if image_data.startswith('data:image'):
+                # base64エンコードされた画像
+                st.image(image_data, caption=caption, use_container_width=True, width=width)
+            elif image_data.startswith('http'):
+                # URLの画像
+                st.image(image_data, caption=caption, use_container_width=True, width=width)
+            else:
+                # その他の形式
+                st.image(image_data, caption=caption, use_container_width=True, width=width)
+        else:
+            # デフォルト画像
+            st.image("https://via.placeholder.com/200x200?text=No+Photo", 
+                    caption="プロフィール写真なし", use_container_width=True, width=width)
+    except Exception as e:
+        st.error(f"画像の表示に失敗しました: {e}")
+        # エラー時はデフォルト画像を表示
+        st.image("https://via.placeholder.com/200x200?text=Error", 
+                caption="画像表示エラー", use_container_width=True, width=width)
+
 # ページ設定
 st.set_page_config(
     page_title=APP_CONFIG["page_title"],
@@ -214,11 +237,7 @@ def show_mypage():
         col1, col2 = st.columns([1, 2])
         
         with col1:
-            if user.get('photo_url'):
-                st.image(user['photo_url'], caption="プロフィール写真", use_container_width=True)
-            else:
-                st.image("https://via.placeholder.com/200x200?text=No+Photo", 
-                        caption="プロフィール写真なし", use_container_width=True)
+            display_profile_image(user.get('photo_url'), "プロフィール写真", 200)
             
             # QRコード生成
             base_url = st.get_option("server.baseUrlPath") or "http://localhost:8501"
@@ -269,7 +288,42 @@ def show_profile_edit():
                 ["技術", "音楽", "スポーツ", "料理", "旅行", "アート", "ゲーム", "その他"],
                 default=user.get('interests', [])
             )
-            photo_url = st.text_input("写真URL", value=user.get('photo_url', ''))
+            # プロフィール写真のアップロード
+            st.subheader("プロフィール写真")
+            
+            # 現在の写真を表示
+            display_profile_image(user.get('photo_url'), "現在の写真", 200)
+            
+            # ファイルアップローダー
+            uploaded_file = st.file_uploader(
+                "新しい写真をアップロード",
+                type=['png', 'jpg', 'jpeg', 'gif'],
+                help="PNG, JPG, JPEG, GIF形式のファイルをアップロードできます"
+            )
+            
+            # アップロードされたファイルを処理
+            photo_url = user.get('photo_url', '')
+            if uploaded_file is not None:
+                # ファイルを一時的に保存してURLを取得
+                try:
+                    # ファイルの内容を取得
+                    file_content = uploaded_file.read()
+                    file_name = uploaded_file.name
+                    
+                    # ファイルの拡張子を取得
+                    file_extension = file_name.split('.')[-1].lower()
+                    
+                    # プレビュー表示
+                    st.image(file_content, caption="アップロードされた写真", use_container_width=True, width=200)
+                    
+                    # ファイルをbase64エンコードして保存（簡易的な実装）
+                    import base64
+                    photo_url = f"data:image/{file_extension};base64,{base64.b64encode(file_content).decode()}"
+                    
+                    st.success(f"写真がアップロードされました: {file_name}")
+                except Exception as e:
+                    st.error(f"写真のアップロードに失敗しました: {e}")
+                    photo_url = user.get('photo_url', '')
             
             st.subheader("SNSアカウント")
             sns_accounts = user.get('sns_accounts', {})
