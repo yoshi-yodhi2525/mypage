@@ -22,7 +22,7 @@ def get_firebase_config():
         private_key = private_key.replace("\\n", "\n")
     
     return {
-        "type": "service_account",
+    "type": "service_account",
         "project_id": project_id,
         "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
         "private_key": private_key,
@@ -32,7 +32,7 @@ def get_firebase_config():
         "token_uri": os.getenv("FIREBASE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
         "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs"),
         "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL")
-    }
+}
 
 # アプリケーション設定
 APP_CONFIG = {

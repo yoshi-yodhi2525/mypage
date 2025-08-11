@@ -212,7 +212,20 @@ def show_register_form():
             "興味のあるジャンル",
             ["技術", "音楽", "スポーツ", "料理", "旅行", "アート", "ゲーム", "その他"]
         )
-        photo_url = st.text_input("写真URL（オプション）")
+        # 写真アップロード
+        uploaded_photo = st.file_uploader(
+            "プロフィール写真（オプション）", 
+            type=['png', 'jpg', 'jpeg'], 
+            help="PNG、JPG、JPEG形式の画像をアップロードできます。推奨サイズ: 200x200px以上、最大5MB"
+        )
+        
+        # アップロードされた写真のプレビュー
+        if uploaded_photo is not None:
+            st.image(uploaded_photo, caption="アップロードされた写真", width=200)
+            st.info("📸 写真がアップロードされました。登録ボタンを押すと保存されます。")
+        
+        # 写真URL（オプション）
+        photo_url = st.text_input("写真URL（オプション）", help="画像をアップロードするか、URLを直接入力してください")
         
         # SNSアカウント
         st.subheader("SNSアカウント（オプション）")
@@ -228,6 +241,44 @@ def show_register_form():
                     st.error("パスワードが一致しません。")
                     return
                 
+                # アップロードされた写真をbase64に変換
+                final_photo_url = photo_url
+                if uploaded_photo is not None:
+                    try:
+                        # ファイルサイズチェック（5MB制限）
+                        file_size = len(uploaded_photo.getvalue())
+                        max_size = 5 * 1024 * 1024  # 5MB
+                        
+                        if file_size > max_size:
+                            st.error(f"❌ ファイルサイズが大きすぎます。5MB以下のファイルを選択してください。（現在: {file_size / (1024*1024):.1f}MB）")
+                            return
+                        
+                        # 画像をbase64エンコード
+                        import base64
+                        from io import BytesIO
+                        
+                        # 画像を読み込み
+                        image = uploaded_photo.read()
+                        image_base64 = base64.b64encode(image).decode()
+                        
+                        # MIMEタイプを取得
+                        file_extension = uploaded_photo.name.split('.')[-1].lower()
+                        mime_type = f"image/{file_extension}"
+                        if file_extension == 'jpg':
+                            mime_type = "image/jpeg"
+                        
+                        # data URL形式で保存
+                        final_photo_url = f"data:{mime_type};base64,{image_base64}"
+                        
+                        st.success("📸 写真が正常にアップロードされました！")
+                        
+                        # アップロードされた写真がある場合は、URL入力を無視
+                        if photo_url:
+                            st.info("ℹ️ アップロードされた写真が優先されます。URL入力は無視されました。")
+                    except Exception as e:
+                        st.error(f"❌ 写真のアップロードに失敗しました: {e}")
+                        return
+                
                 # ユーザーデータを準備
                 user_data = {
                     'email': email,
@@ -235,7 +286,7 @@ def show_register_form():
                     'display_name': display_name,
                     'profile': profile,
                     'interests': interests,
-                    'photo_url': photo_url,
+                    'photo_url': final_photo_url,
                     'sns_accounts': {
                         'twitter': twitter,
                         'instagram': instagram,
