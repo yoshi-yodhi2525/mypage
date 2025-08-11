@@ -1,4 +1,4 @@
-import pyqrcode
+import qrcode
 import streamlit as st
 from io import BytesIO
 import base64
@@ -8,11 +8,21 @@ def generate_qr_code(data, size=10):
     """QRコードを生成する"""
     try:
         # QRコードを生成
-        qr = pyqrcode.create(data)
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=size,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
         
-        # PNG形式でバイトデータを取得
+        # PIL Imageとして生成
+        qr_image = qr.make_image(fill_color="black", back_color="white")
+        
+        # BytesIOに変換
         buffer = BytesIO()
-        qr.png(buffer, scale=size)
+        qr_image.save(buffer, format="PNG")
         buffer.seek(0)
         
         return buffer
