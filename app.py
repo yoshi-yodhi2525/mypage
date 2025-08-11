@@ -79,16 +79,16 @@ def main():
         show_public_user_page(user_id_param)
     else:
         # 通常のナビゲーション
-        if is_authenticated():
-            show_authenticated_navigation()
-        else:
-            show_unauthenticated_navigation()
-        
-        # メインコンテンツ
-        if is_authenticated():
-            show_main_content()
-        else:
-            show_login_register()
+    if is_authenticated():
+        show_authenticated_navigation()
+    else:
+        show_unauthenticated_navigation()
+    
+    # メインコンテンツ
+    if is_authenticated():
+        show_main_content()
+    else:
+        show_login_register()
 
 def show_authenticated_navigation():
     """認証済みユーザー用のナビゲーション"""
@@ -277,7 +277,7 @@ def show_register_form():
                             st.info("ℹ️ アップロードされた写真が優先されます。URL入力は無視されました。")
                     except Exception as e:
                         st.error(f"❌ 写真のアップロードに失敗しました: {e}")
-                        return
+                    return
                 
                 # ユーザーデータを準備
                 user_data = {
@@ -535,14 +535,14 @@ def show_admin_panel():
                             
                             with col_confirm1:
                                 if st.button("✅ 削除する", key=f"yes_delete_{user['user_id']}"):
-                                    success, error = delete_user(user['user_id'])
-                                    if success:
-                                        st.success("ユーザーを削除しました。")
+                                success, error = delete_user(user['user_id'])
+                                if success:
+                                    st.success("ユーザーを削除しました。")
                                         # セッション状態をクリア
                                         del st.session_state[delete_key]
-                                        st.rerun()
-                                    else:
-                                        st.error(f"削除エラー: {error}")
+                                    st.rerun()
+                                else:
+                                    st.error(f"削除エラー: {error}")
                             
                             with col_confirm2:
                                 if st.button("❌ キャンセル", key=f"cancel_delete_{user['user_id']}"):
@@ -743,7 +743,7 @@ def show_user_edit_form(user):
                             st.write(f"• パスワード長: {len(new_password)}文字")
                             st.write(f"• パスワードが空でない: {bool(new_password)}")
                             
-                            success, error = reset_user_password(user['user_id'], new_password)
+                        success, error = reset_user_password(user['user_id'], new_password)
                             
                             # 関数呼び出し後の確認
                             st.info("📋 関数呼び出し完了")
@@ -751,7 +751,7 @@ def show_user_edit_form(user):
                             st.write(f"successの型: {type(success)}")
                             st.write(f"errorの型: {type(error)}")
                             
-                            if success:
+                        if success:
                                 st.success("✅ パスワードをリセットしました！")
                                 st.info("新しいパスワードでログインできるようになりました。")
                                 
@@ -843,7 +843,7 @@ def show_user_edit_form(user):
                                 import time
                                 time.sleep(3)
                                 st.rerun()
-                            else:
+                        else:
                                 st.error(f"❌ パスワードリセットエラー: {error}")
                                 st.error("詳細なエラー情報を確認してください。")
                                 

@@ -252,9 +252,28 @@ def reset_user_password(user_id, new_password):
         
         # 新しいパスワードをハッシュ化
         print("🔐 パスワードハッシュ化中...")
-        password_hash = hash_password(new_password)
-        print("✅ パスワードハッシュ化完了")
-        print(f"ハッシュ長: {len(password_hash)} bytes")
+        print(f"入力パスワード: {'*' * len(new_password)} ({len(new_password)}文字)")
+        print(f"入力パスワードの型: {type(new_password)}")
+        
+        try:
+            password_hash = hash_password(new_password)
+            print("✅ パスワードハッシュ化完了")
+            print(f"ハッシュ長: {len(password_hash)} bytes")
+            print(f"ハッシュの型: {type(password_hash)}")
+            print(f"ハッシュ内容: {password_hash[:50]}...")
+            
+            # ハッシュ化の検証
+            if isinstance(password_hash, bytes):
+                print("✅ ハッシュはbytes型で正常です")
+            else:
+                print(f"⚠️ ハッシュの型が予期しない: {type(password_hash)}")
+                
+        except Exception as hash_error:
+            print(f"❌ パスワードハッシュ化でエラー: {hash_error}")
+            print(f"エラータイプ: {type(hash_error).__name__}")
+            import traceback
+            print(f"ハッシュ化エラーのスタックトレース: {traceback.format_exc()}")
+            raise hash_error
         
         # パスワードをリセット
         update_data = {
@@ -262,7 +281,18 @@ def reset_user_password(user_id, new_password):
             'updated_at': datetime.now()
         }
         
-        print(f"📝 更新データ準備完了: {update_data}")
+        print(f"📝 更新データ準備完了:")
+        print(f"  password_hash: {type(password_hash)} = {len(password_hash)} bytes")
+        print(f"  updated_at: {type(datetime.now())} = {datetime.now()}")
+        print(f"  更新データ全体: {update_data}")
+        
+        # 更新データの検証
+        if 'password_hash' in update_data and update_data['password_hash'] is not None:
+            print("✅ 更新データのpassword_hashが正常に設定されています")
+        else:
+            print("❌ 更新データのpassword_hashが正しく設定されていません")
+            print(f"password_hashの値: {update_data.get('password_hash')}")
+            print(f"password_hashの型: {type(update_data.get('password_hash'))}")
         
         # データベース更新
         print("💾 データベース更新中...")
@@ -279,12 +309,25 @@ def reset_user_password(user_id, new_password):
             print("❌ 更新前のドキュメントが見つかりません")
         
         # 実際の更新処理
-        update_result = db.collection('users').document(user_id).update(update_data)
-        print(f"更新結果: {update_result}")
-        print("✅ データベース更新完了")
+        print("🚀 実際の更新処理を開始...")
+        try:
+            update_result = db.collection('users').document(user_id).update(update_data)
+            print(f"更新結果: {update_result}")
+            print(f"更新結果の型: {type(update_result)}")
+            print("✅ データベース更新完了")
+        except Exception as update_error:
+            print(f"❌ 更新処理でエラーが発生: {update_error}")
+            print(f"エラータイプ: {type(update_error).__name__}")
+            import traceback
+            print(f"更新エラーのスタックトレース: {traceback.format_exc()}")
+            raise update_error
         
         # 更新後の確認
         print("🔍 更新確認中...")
+        print("少し待ってから確認を開始します...")
+        import time
+        time.sleep(1)  # 1秒待機
+        
         updated_doc = db.collection('users').document(user_id).get()
         if updated_doc.exists:
             updated_user = updated_doc.to_dict()
@@ -301,10 +344,28 @@ def reset_user_password(user_id, new_password):
                     print("⚠️ パスワード更新確認で不一致")
                     print(f"期待されるハッシュ: {password_hash[:50]}...")
                     print(f"実際のハッシュ: {updated_user['password_hash'][:50]}...")
+                    
+                    # 不一致の詳細調査
+                    print("🔍 不一致の詳細調査:")
+                    print(f"期待されるハッシュの型: {type(password_hash)}")
+                    print(f"実際のハッシュの型: {type(updated_user['password_hash'])}")
+                    print(f"期待されるハッシュの長さ: {len(password_hash)}")
+                    print(f"実際のハッシュの長さ: {len(updated_user['password_hash'])}")
             else:
                 print("❌ 更新後のパスワードハッシュが存在しません")
+                print("更新後のユーザーデータの全フィールド:")
+                for key, value in updated_user.items():
+                    print(f"  {key}: {type(value)} = {value}")
         else:
             print("❌ 更新後のドキュメントが見つかりません")
+            print("ドキュメントの存在確認を再試行...")
+            # 再試行
+            time.sleep(2)
+            retry_doc = db.collection('users').document(user_id).get()
+            if retry_doc.exists:
+                print("✅ 再試行でドキュメントが見つかりました")
+            else:
+                print("❌ 再試行でもドキュメントが見つかりません")
         
         print("=== パスワードリセット完了 ===")
         return True, None
