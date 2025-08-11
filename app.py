@@ -688,6 +688,18 @@ def show_user_edit_form(user):
                         # パスワードリセットを実行
                         try:
                             st.info("📡 Firebaseに接続中...")
+                            
+                            # パスワードリセット処理の詳細ログ
+                            with st.expander("🔍 パスワードリセット処理の詳細", expanded=True):
+                                st.info("処理開始...")
+                                
+                                # 処理中のログを表示
+                                st.write("1. Firebase接続確認...")
+                                st.write("2. ユーザー存在確認...")
+                                st.write("3. パスワードハッシュ化...")
+                                st.write("4. データベース更新...")
+                                st.write("5. 更新確認...")
+                            
                             success, error = reset_user_password(user['user_id'], new_password)
                             
                             if success:
@@ -696,6 +708,13 @@ def show_user_edit_form(user):
                                 
                                 # 成功情報を表示
                                 st.balloons()
+                                
+                                # 成功時の詳細情報
+                                with st.expander("✅ 成功詳細", expanded=True):
+                                    st.success("パスワードリセット処理が完了しました")
+                                    st.info(f"ユーザーID: {user['user_id']}")
+                                    st.info(f"ユーザー名: {user.get('display_name', 'Unknown')}")
+                                    st.info(f"新しいパスワード長: {len(new_password)}文字")
                                 
                                 # パスワード更新の確認
                                 st.info("🔍 パスワード更新の確認中...")
@@ -722,8 +741,28 @@ def show_user_edit_form(user):
                                             st.warning(f"⚠️ パスワード認証テストエラー: {e}")
                                     else:
                                         st.warning("⚠️ パスワードの保存確認に失敗しました")
+                                        
+                                        # 詳細なデバッグ情報を表示
+                                        st.error("🔍 詳細なデバッグ情報:")
+                                        st.code(f"ユーザーID: {user['user_id']}")
+                                        st.code(f"ユーザー名: {user.get('display_name', 'Unknown')}")
+                                        st.code(f"メールアドレス: {user.get('email', 'No email')}")
+                                        
+                                        # データベースの状態を確認
+                                        st.info("📊 データベースの状態確認中...")
+                                        try:
+                                            current_user = get_user_by_id(user['user_id'])
+                                            if current_user:
+                                                st.json(current_user)
+                                            else:
+                                                st.error("❌ ユーザー情報の取得に失敗")
+                                        except Exception as e:
+                                            st.error(f"❌ データベース確認エラー: {e}")
                                 except Exception as e:
                                     st.warning(f"⚠️ パスワード確認エラー: {e}")
+                                    st.error(f"詳細エラー: {str(e)}")
+                                    import traceback
+                                    st.code(traceback.format_exc())
                                 
                                 # セッション状態をクリア
                                 if "password_reset_processing" in st.session_state:
@@ -740,10 +779,19 @@ def show_user_edit_form(user):
                                 st.error("詳細なエラー情報を確認してください。")
                                 
                                 # エラーの詳細を表示
-                                with st.expander("🔍 エラー詳細"):
+                                with st.expander("🔍 エラー詳細", expanded=True):
+                                    st.error(f"エラーメッセージ: {error}")
                                     st.code(f"ユーザーID: {user['user_id']}")
-                                    st.code(f"エラーメッセージ: {error}")
-                                    st.info("Firebaseの設定やネットワーク接続を確認してください。")
+                                    st.code(f"ユーザー名: {user.get('display_name', 'Unknown')}")
+                                    st.code(f"メールアドレス: {user.get('email', 'No email')}")
+                                    st.code(f"入力されたパスワード長: {len(new_password)}文字")
+                                    
+                                    # トラブルシューティングガイド
+                                    st.info("🔧 トラブルシューティング:")
+                                    st.write("• Firebaseの設定を確認してください")
+                                    st.write("• ネットワーク接続を確認してください")
+                                    st.write("• ユーザーIDが正しいか確認してください")
+                                    st.write("• パスワードが8文字以上か確認してください")
                                 
                                 # セッション状態をクリア
                                 if "password_reset_processing" in st.session_state:
