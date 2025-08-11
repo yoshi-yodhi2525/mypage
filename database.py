@@ -266,7 +266,21 @@ def reset_user_password(user_id, new_password):
         
         # データベース更新
         print("💾 データベース更新中...")
-        db.collection('users').document(user_id).update(update_data)
+        print(f"更新対象ドキュメント: users/{user_id}")
+        print(f"更新データ: {update_data}")
+        
+        # 更新前のデータを確認
+        print("🔍 更新前のデータ確認...")
+        before_doc = db.collection('users').document(user_id).get()
+        if before_doc.exists:
+            before_data = before_doc.to_dict()
+            print(f"更新前のパスワードハッシュ: {before_data.get('password_hash', 'None')}")
+        else:
+            print("❌ 更新前のドキュメントが見つかりません")
+        
+        # 実際の更新処理
+        update_result = db.collection('users').document(user_id).update(update_data)
+        print(f"更新結果: {update_result}")
         print("✅ データベース更新完了")
         
         # 更新後の確認
@@ -274,10 +288,23 @@ def reset_user_password(user_id, new_password):
         updated_doc = db.collection('users').document(user_id).get()
         if updated_doc.exists:
             updated_user = updated_doc.to_dict()
-            if 'password_hash' in updated_user and updated_user['password_hash'] == password_hash:
-                print("✅ パスワード更新確認完了")
+            print(f"更新後のユーザー情報: {updated_user.get('display_name', 'Unknown')}")
+            print(f"更新後のパスワードハッシュ存在: {'password_hash' in updated_user}")
+            
+            if 'password_hash' in updated_user:
+                print(f"更新後のパスワードハッシュ長: {len(updated_user['password_hash'])} bytes")
+                print(f"更新後のパスワードハッシュ内容: {updated_user['password_hash'][:50]}...")
+                
+                if updated_user['password_hash'] == password_hash:
+                    print("✅ パスワード更新確認完了 - ハッシュが一致")
+                else:
+                    print("⚠️ パスワード更新確認で不一致")
+                    print(f"期待されるハッシュ: {password_hash[:50]}...")
+                    print(f"実際のハッシュ: {updated_user['password_hash'][:50]}...")
             else:
-                print("⚠️ パスワード更新確認で不一致")
+                print("❌ 更新後のパスワードハッシュが存在しません")
+        else:
+            print("❌ 更新後のドキュメントが見つかりません")
         
         print("=== パスワードリセット完了 ===")
         return True, None

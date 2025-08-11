@@ -699,6 +699,25 @@ def show_user_edit_form(user):
                             st.write(f"• パスワード長: {len(new_password)}文字")
                             st.write(f"• 現在時刻: {datetime.now()}")
                             
+                            # Firebase接続テスト
+                            st.info("🔌 Firebase接続テスト中...")
+                            try:
+                                from config import get_firestore_client
+                                db = get_firestore_client()
+                                if db:
+                                    st.success("✅ Firebase接続成功")
+                                    # コレクション一覧を取得
+                                    try:
+                                        collections = [col.id for col in db.collections()]
+                                        st.write(f"利用可能なコレクション: {collections}")
+                                    except Exception as e:
+                                        st.warning(f"⚠️ コレクション取得エラー: {e}")
+                                else:
+                                    st.error("❌ Firebase接続失敗")
+                                    st.error("データベース接続ができません")
+                            except Exception as e:
+                                st.error(f"❌ Firebase接続テストエラー: {e}")
+                            
                             # パスワードリセット処理の詳細ログ
                             with st.expander("🔍 パスワードリセット処理の詳細", expanded=True):
                                 st.info("処理開始...")
@@ -742,6 +761,26 @@ def show_user_edit_form(user):
                                     st.info(f"ユーザーID: {user['user_id']}")
                                     st.info(f"ユーザー名: {user.get('display_name', 'Unknown')}")
                                     st.info(f"新しいパスワード長: {len(new_password)}文字")
+                                
+                                # データベース更新の即座確認
+                                st.info("🔍 データベース更新の即座確認中...")
+                                try:
+                                    from database import get_user_by_id
+                                    updated_user = get_user_by_id(user['user_id'])
+                                    if updated_user:
+                                        st.success("✅ 更新後のユーザー情報取得成功")
+                                        st.write("更新されたユーザー情報:")
+                                        st.json(updated_user)
+                                        
+                                        # パスワードハッシュの確認
+                                        if 'password_hash' in updated_user:
+                                            st.success(f"✅ パスワードハッシュが存在します（長さ: {len(updated_user['password_hash'])} bytes）")
+                                        else:
+                                            st.error("❌ パスワードハッシュが存在しません")
+                                    else:
+                                        st.error("❌ 更新後のユーザー情報取得に失敗")
+                                except Exception as e:
+                                    st.error(f"❌ データベース確認エラー: {e}")
                                 
                                 # パスワード更新の確認
                                 st.info("🔍 パスワード更新の確認中...")
