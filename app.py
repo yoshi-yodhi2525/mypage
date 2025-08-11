@@ -249,16 +249,11 @@ def show_mypage():
             # QRコード生成
             # 設定ファイルからbase_urlを取得、失敗時はデフォルト値を使用
             try:
-                # デバッグ情報
-                st.write(f"APP_CONFIG type: {type(APP_CONFIG)}")
-                st.write(f"APP_CONFIG content: {APP_CONFIG}")
-                
                 if hasattr(APP_CONFIG, 'get') and callable(getattr(APP_CONFIG, 'get')):
                     base_url = APP_CONFIG.get("base_url", "https://mypage-001.streamlit.app")
                 else:
                     base_url = "https://mypage-001.streamlit.app"
             except Exception as e:
-                st.write(f"Error getting base_url: {e}")
                 base_url = "https://mypage-001.streamlit.app"
             
             qr_code = generate_user_qr_code(user_id, base_url)
