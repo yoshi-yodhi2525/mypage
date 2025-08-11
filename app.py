@@ -641,6 +641,17 @@ def show_public_user_page(user_id):
             st.write("SNSアカウントが設定されていません。")
     
     # 友達になるボタン（ログイン済みユーザーのみ表示）
+    st.subheader("友達機能")
+    
+    # デバッグ情報（一時的）
+    st.write(f"**デバッグ情報:**")
+    st.write(f"  ログイン状態: {is_authenticated()}")
+    if is_authenticated():
+        current_user_id = get_current_user_id()
+        st.write(f"  現在のユーザーID: {current_user_id}")
+        st.write(f"  表示中のユーザーID: {user_id}")
+        st.write(f"  自分自身か: {current_user_id == user_id}")
+    
     if is_authenticated():
         current_user_id = get_current_user_id()
         if current_user_id != user_id:  # 自分自身は友達になれない
@@ -673,6 +684,12 @@ def show_public_user_page(user_id):
                         st.rerun()
                     else:
                         st.error(f"追加エラー: {error}")
+        else:
+            st.info("これはあなたのプロフィールです。自分自身とは友達になれません。")
+    else:
+        st.info("友達機能を利用するにはログインが必要です。")
+        if st.button("ログインする"):
+            st.rerun()
     
     # 戻るボタン
     if st.button("← メインページに戻る"):
