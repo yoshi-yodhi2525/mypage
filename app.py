@@ -240,7 +240,20 @@ def show_mypage():
             display_profile_image(user.get('photo_url'), "プロフィール写真", 200)
             
             # QRコード生成
-            base_url = APP_CONFIG["base_url"]
+            # 設定ファイルからbase_urlを取得、失敗時はデフォルト値を使用
+            try:
+                # デバッグ情報
+                st.write(f"APP_CONFIG type: {type(APP_CONFIG)}")
+                st.write(f"APP_CONFIG content: {APP_CONFIG}")
+                
+                if hasattr(APP_CONFIG, 'get') and callable(getattr(APP_CONFIG, 'get')):
+                    base_url = APP_CONFIG.get("base_url", "https://mypage-001.streamlit.app")
+                else:
+                    base_url = "https://mypage-001.streamlit.app"
+            except Exception as e:
+                st.write(f"Error getting base_url: {e}")
+                base_url = "https://mypage-001.streamlit.app"
+            
             qr_code = generate_user_qr_code(user_id, base_url)
             if qr_code:
                 display_qr_code(qr_code, "マイページQRコード")
